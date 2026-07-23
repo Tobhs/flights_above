@@ -4,7 +4,7 @@
  * Dependency-free custom element; works when added as a dashboard resource.
  */
 
-const CARD_VERSION = "1.0.2";
+const CARD_VERSION = "1.0.4";
 
 const PLANE_SVG = `
 <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -28,6 +28,7 @@ class FlightsAboveCard extends HTMLElement {
       flights: Array.isArray(config.flights) ? config.flights : null,
       count_entity: config.count_entity || null,
       max: config.max || 3,
+      sort: config.sort === "distance" ? "distance" : "recent",
       show_details: config.show_details !== false,
       show_empty: config.show_empty !== false,
     };
@@ -52,8 +53,10 @@ class FlightsAboveCard extends HTMLElement {
 
   _flightEntityIds() {
     if (this._config.flights) return this._config.flights;
+    // Probe every possible slot (not just `max`) so sorting can consider all
+    // available flights before we trim the list down to `max` for display.
     const ids = [];
-    for (let i = 1; i <= this._config.max; i++) {
+    for (let i = 1; i <= 6; i++) {
       ids.push(`${this._config.entity_prefix}_flight_${i}`);
     }
     return ids;
@@ -80,6 +83,8 @@ class FlightsAboveCard extends HTMLElement {
     const dest = esc(a.destination_iata || a.destination_icao || "???");
     const originName = esc(a.origin_name || "");
     const destName = esc(a.destination_name || "");
+    const originCountry = esc(a.origin_country || "");
+    const destCountry = esc(a.destination_country || "");
     const pct = this._clampPercent(a.progress_percent);
     const planePos = pct === null ? 50 : Math.max(4, Math.min(96, pct));
     const knownRoute = a.progress_percent !== null && a.progress_percent !== undefined;
@@ -122,10 +127,12 @@ class FlightsAboveCard extends HTMLElement {
           <div class="airport left">
             <div class="code">${origin}</div>
             <div class="aname">${originName}</div>
+            ${originCountry ? `<div class="acountry">${originCountry}</div>` : ""}
           </div>
           <div class="airport right">
             <div class="code">${dest}</div>
             <div class="aname">${destName}</div>
+            ${destCountry ? `<div class="acountry">${destCountry}</div>` : ""}
           </div>
         </div>
 
@@ -151,7 +158,7 @@ class FlightsAboveCard extends HTMLElement {
     if (!this._hass || !this._config) return;
 
     const entities = this._flightEntityIds();
-    const flights = entities
+    let flights = entities
       .map((id) => this._hass.states[id])
       .filter(
         (s) =>
@@ -160,6 +167,16 @@ class FlightsAboveCard extends HTMLElement {
           !["unknown", "unavailable", "None"].includes(s.state) &&
           s.attributes.in_range !== false
       );
+
+    // Optionally show the closest flights first, then trim to `max`.
+    if (this._config.sort === "distance") {
+      const d = (s) => {
+        const v = s.attributes.distance_km;
+        return v === null || v === undefined ? Infinity : Number(v);
+      };
+      flights.sort((a, b) => d(a) - d(b));
+    }
+    flights = flights.slice(0, this._config.max);
 
     const countObj = this._hass.states[this._countEntityId()];
     const count = countObj ? countObj.state : flights.length;
@@ -211,15 +228,25 @@ class FlightsAboveCard extends HTMLElement {
         font-size: 1.25rem; font-weight: 600; letter-spacing: 0.5px;
         color: var(--primary-text-color);
       }
-      .subtitle { font-size: 0.8rem; color: var(--secondary-text-color); }
-      .airports { margin-bottom: 6px; }
+      .subtitle {
+        font-size: 0.8rem; color: var(--secondary-text-color);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+      }
+      .airports { margin-bottom: 6px; align-items: flex-start; gap: 10px; }
+      /* Each airport is capped to half the card so long names can't overlap. */
+      .airport { max-width: 48%; min-width: 0; }
+      .airport.right { text-align: right; }
       .airport .code {
         font-size: 1.05rem; font-weight: 700; color: var(--primary-text-color);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
-      .airport.right { text-align: right; }
       .airport .aname {
         font-size: 0.72rem; color: var(--secondary-text-color);
-        max-width: 45vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .airport .acountry {
+        font-size: 0.66rem; color: var(--secondary-text-color); opacity: 0.8;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
       .track {
         position: relative; height: 26px; margin: 6px 6px 2px;

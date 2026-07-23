@@ -62,8 +62,9 @@ You can change the radius, count and interval any time via the integration's
 
 For an integration named "Flights Above" you get:
 
-- `sensor.flights_above_flights_overhead`: number of flights currently in range.
-  Its attributes include a `flights` list summarising each one.
+- `sensor.flights_above_flights_overhead`: the true number of aircraft currently
+  within your radius (not limited by how many flights are displayed). Its
+  attributes include a `flights` list summarising the tracked ones.
 - `sensor.flights_above_flight_1`, `_flight_2`, `_flight_3`: one per configured
   slot, ordered by most recently seen. State = callsign.
 
@@ -71,8 +72,8 @@ Each flight slot sensor exposes these attributes:
 
 | Attribute | Description |
 |---|---|
-| `origin_name` / `origin_iata` / `origin_icao` | Departure airport |
-| `destination_name` / `destination_iata` / `destination_icao` | Arrival airport |
+| `origin_name` / `origin_iata` / `origin_icao` / `origin_country` | Departure airport + country |
+| `destination_name` / `destination_iata` / `destination_icao` / `destination_country` | Arrival airport + country |
 | `hours_flown` / `hours_remaining` / `hours_total` | Estimated flight time |
 | `eta` | Estimated arrival time (ISO timestamp) |
 | `progress_percent` | How far along the route (0-100) |
@@ -147,9 +148,32 @@ entity_prefix: sensor.flights_above
 | `entity_prefix` | `sensor.flights_above` | Prefix used to find the `_flight_1…N` and `_flights_overhead` sensors. Change it if you named the integration differently. |
 | `flights` | *(auto)* | Optional explicit list of flight sensor entity ids instead of using the prefix. |
 | `count_entity` | *(auto)* | Optional explicit "flights overhead" count sensor. |
-| `max` | `3` | How many flight slots to look for when auto-deriving from the prefix. |
+| `max` | `3` | How many flights to display at once. |
+| `sort` | `recent` | Order flights by `recent` (most recently seen) or `distance` (nearest first). |
 | `show_details` | `true` | Show aircraft type / registration and the info chips. |
 | `show_empty` | `true` | Show a "No flights in range" message when the sky is empty. |
+
+Show a single flight (e.g. the nearest one):
+
+```yaml
+type: custom:flights-above-card
+title: Flights Above
+entity_prefix: sensor.flights_above
+max: 1
+show_details: true
+show_empty: true
+```
+
+Add `sort: distance` to make that single card always show the **closest** aircraft
+(by default the list is ordered by most recently seen):
+
+```yaml
+type: custom:flights-above-card
+title: Nearest flight
+entity_prefix: sensor.flights_above
+max: 1
+sort: distance
+```
 
 Example with explicit entities:
 

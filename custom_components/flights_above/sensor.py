@@ -31,9 +31,11 @@ _FLIGHT_ATTRS = (
     "origin_name",
     "origin_iata",
     "origin_icao",
+    "origin_country",
     "destination_name",
     "destination_iata",
     "destination_icao",
+    "destination_country",
     "hours_flown",
     "hours_remaining",
     "hours_total",
@@ -95,7 +97,9 @@ class FlightsOverheadSensor(_BaseFlightsEntity):
 
     @property
     def native_value(self) -> int:
-        return len(self.coordinator.data or [])
+        # True number of aircraft currently inside the radius (not capped by
+        # how many flights are shown as individual sensors).
+        return self.coordinator.current_count
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -104,6 +108,7 @@ class FlightsOverheadSensor(_BaseFlightsEntity):
             "radius_km": self.coordinator.radius_km,
             "latitude": self.coordinator.latitude,
             "longitude": self.coordinator.longitude,
+            "tracked_flights": len(flights),
             "flights": [
                 {
                     "callsign": f["callsign"],

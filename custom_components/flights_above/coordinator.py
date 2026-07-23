@@ -250,6 +250,8 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
         self._route_cache: dict[str, tuple[dict | None, float]] = {}
         # hex -> flight dict (rolling history of recently seen flights)
         self._history: dict[str, dict] = {}
+        # True number of airborne aircraft currently inside the radius.
+        self.current_count: int = 0
 
         super().__init__(
             hass,
@@ -261,6 +263,19 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> list[dict]:
         aircraft = await self._fetch_aircraft()
         now = time.time()
+
+        # Count every airborne aircraft currently inside the radius, regardless
+        # of whether its route can be resolved. This is the true "flights
+        # overhead" number. Cheap position-only check, no route lookups.
+        in_range = 0
+        for ac in aircraft:
+            lat = _valid_lat(ac.get("lat"))
+            lon = _valid_lon(ac.get("lon"))
+            if lat is None or lon is None or ac.get("alt_baro") == "ground":
+                continue
+            if haversine_km(self.latitude, self.longitude, lat, lon) <= self.radius_km:
+                in_range += 1
+        self.current_count = in_range
 
         for ac in aircraft:
             flight = await self._build_flight(ac, now)
@@ -401,9 +416,11 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
             "origin_name": None,
             "origin_iata": None,
             "origin_icao": None,
+            "origin_country": None,
             "destination_name": None,
             "destination_iata": None,
             "destination_icao": None,
+            "destination_country": None,
             "hours_flown": None,
             "hours_remaining": None,
             "hours_total": None,
@@ -427,9 +444,11 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
                     "origin_name": route["origin_name"],
                     "origin_iata": route["origin_iata"],
                     "origin_icao": route["origin_icao"],
+                    "origin_country": route["origin_country"],
                     "destination_name": route["destination_name"],
                     "destination_iata": route["destination_iata"],
                     "destination_icao": route["destination_icao"],
+                    "destination_country": route["destination_country"],
                 }
             )
             self._add_progress(flight, route, lat, lon, speed_kmh)
@@ -546,11 +565,13 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
             "origin_name": _clean_text(origin.get("name")),
             "origin_iata": _clean_text(origin.get("iata_code"), 4),
             "origin_icao": _clean_text(origin.get("icao_code"), 4),
+            "origin_country": _clean_text(origin.get("country_name"), 40),
             "origin_lat": _valid_lat(origin.get("latitude")),
             "origin_lon": _valid_lon(origin.get("longitude")),
             "destination_name": _clean_text(destination.get("name")),
             "destination_iata": _clean_text(destination.get("iata_code"), 4),
             "destination_icao": _clean_text(destination.get("icao_code"), 4),
+            "destination_country": _clean_text(destination.get("country_name"), 40),
             "destination_lat": _valid_lat(destination.get("latitude")),
             "destination_lon": _valid_lon(destination.get("longitude")),
         }
