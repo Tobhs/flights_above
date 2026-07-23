@@ -1,0 +1,14 @@
+{
+  "domain": "flights_above",
+  "name": "Flights Above",
+  "codeowners": [],
+  "config_flow": true,
+  "after_dependencies": ["lovelace"],
+  "dependencies": ["http"],
+  "documentation": "https://github.com/YOUR_GITHUB_USER/flights_above",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/YOUR_GITHUB_USER/flights_above/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}
