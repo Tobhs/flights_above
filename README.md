@@ -3,7 +3,7 @@
 A Home Assistant custom integration (HACS-ready) that shows the aircraft passing
 over a location you choose. For each flight it gives you the callsign, the
 departure and arrival airports, and a **progress line** showing how far along the
-journey the plane is — hours already flown, hours remaining, and total.
+journey the plane is: hours already flown, hours remaining, and total.
 
 <p align="center">
   <picture>
@@ -15,7 +15,7 @@ journey the plane is — hours already flown, hours remaining, and total.
 > The bundled Lovelace card, drawing each flight as an origin → ✈ → destination
 > track with hours, an estimated CO₂ footprint, and people on board.
 
-All data comes from **free, open community APIs — no account, no API key, nothing
+All data comes from **free, open community APIs: no account, no API key, nothing
 to pay**:
 
 | Purpose | Source | Cost |
@@ -51,8 +51,8 @@ When you add the integration you'll be asked for:
 | **Name** | Friendly name (also used for the entity ids). |
 | **Latitude / Longitude** | The address/point to watch. Pre-filled with your Home Assistant location. |
 | **Radius (km)** | How far around that point to look (max 400 km; the ADS-B source caps the query at 250 nautical miles ≈ 460 km). |
-| **Number of flights (1–3)** | How many of the most recent flights to expose as sensors. |
-| **Update interval (s)** | How often to poll (default 60 s). Please keep it reasonable — these are free community APIs. |
+| **Number of flights (1-3)** | How many of the most recent flights to expose as sensors. |
+| **Update interval (s)** | How often to poll (default 60 s). Please keep it reasonable; these are free community APIs. |
 | **Only show flights with a known route** | On by default: skips aircraft whose departure/arrival airport can't be identified, so you only see flights with full details. Turn it off to include every aircraft overhead (airports/hours/CO₂ left blank when unknown). |
 
 You can change the radius, count and interval any time via the integration's
@@ -67,9 +67,9 @@ You can change the radius, count and interval any time via the integration's
 
 For an integration named "Flights Above" you get:
 
-- `sensor.flights_above_flights_overhead` — number of flights currently in range.
+- `sensor.flights_above_flights_overhead`: number of flights currently in range.
   Its attributes include a `flights` list summarising each one.
-- `sensor.flights_above_flight_1`, `_flight_2`, `_flight_3` — one per configured
+- `sensor.flights_above_flight_1`, `_flight_2`, `_flight_3`: one per configured
   slot, ordered by most recently seen. State = callsign.
 
 Each flight slot sensor exposes these attributes:
@@ -80,7 +80,7 @@ Each flight slot sensor exposes these attributes:
 | `destination_name` / `destination_iata` / `destination_icao` | Arrival airport |
 | `hours_flown` / `hours_remaining` / `hours_total` | Estimated flight time |
 | `eta` | Estimated arrival time (ISO timestamp) |
-| `progress_percent` | How far along the route (0–100) |
+| `progress_percent` | How far along the route (0-100) |
 | `progress_bar` | `●━━✈──●` style bar for that percent |
 | `route_line` | Full one-line summary (origin, bar, destination, hours) |
 | `co2_total_kg` / `co2_so_far_kg` / `co2_remaining_kg` | Estimated CO₂ footprint for the whole aircraft |
@@ -99,7 +99,7 @@ the *last* flights that passed through even when the sky is momentarily empty.
 > **CO₂ and people-on-board figures are rough estimates.** CO₂ comes from the flight
 > distance times an average fuel-burn factor for the aircraft class; people on board
 > comes from the type's typical seat count times an average load factor (~82%, crew
-> only for freighters). Good for a sense of scale and comparison — not exact figures.
+> only for freighters). Good for a sense of scale and comparison, not exact figures.
 
 ---
 
@@ -184,7 +184,7 @@ content: |
   {%- if states(e) not in ['unknown', 'unavailable', 'None'] and states(e) is not none %}
 
   ### {{ states(e) }}
-  {{ state_attr(e, 'origin_name') or '—' }} → {{ state_attr(e, 'destination_name') or '—' }}
+  {{ state_attr(e, 'origin_name') or '?' }} → {{ state_attr(e, 'destination_name') or '?' }}
 
   `{{ state_attr(e, 'route_line') }}`
   {%- endif %}
@@ -197,7 +197,7 @@ content: |
 
 - **Coverage** depends on volunteer ADS-B receivers near you. Well-covered areas
   (Europe, North America, cities) work best; remote areas may see fewer aircraft.
-- **Route lookups** rely on adsbdb's crowd-sourced database — some callsigns
+- **Route lookups** rely on adsbdb's crowd-sourced database; some callsigns
   (private/GA flights, brand-new routes) won't resolve, in which case airports and
   hours are left blank but the position is still shown.
 - **Flight hours are estimates.** They assume constant ground speed along the

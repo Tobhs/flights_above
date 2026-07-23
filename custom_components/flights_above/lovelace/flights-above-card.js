@@ -1,5 +1,5 @@
 /**
- * Flights Above — custom Lovelace card
+ * Flights Above - custom Lovelace card
  * Draws origin ✈ destination progress tracks for the Flights Above integration.
  * Dependency-free custom element; works when added as a dashboard resource.
  */
