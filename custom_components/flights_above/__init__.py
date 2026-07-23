@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 
+import homeassistant.helpers.config_validation as cv
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -13,6 +14,9 @@ from .const import DOMAIN
 from .coordinator import FlightsAboveCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# This integration is configured via the UI (config entries) only.
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 

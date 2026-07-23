@@ -1,9 +1,9 @@
 {
   "domain": "flights_above",
   "name": "Flights Above",
-  "codeowners": [],
-  "config_flow": true,
   "after_dependencies": ["lovelace"],
+  "codeowners": ["@Tobhs"],
+  "config_flow": true,
   "dependencies": ["http"],
   "documentation": "https://github.com/Tobhs/flights_above",
   "integration_type": "service",
