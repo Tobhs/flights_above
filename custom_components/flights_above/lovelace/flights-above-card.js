@@ -4,12 +4,21 @@
  * Dependency-free custom element; works when added as a dashboard resource.
  */
 
-const CARD_VERSION = "1.0.0";
+const CARD_VERSION = "1.0.2";
 
 const PLANE_SVG = `
 <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
   <path fill="currentColor" d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>
 </svg>`;
+
+// Escape any value coming from sensor attributes (which originate from a
+// third-party API) before it is placed into innerHTML. Prevents HTML/script
+// injection if the upstream data ever contains markup.
+const ESC_MAP = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+function esc(value) {
+  if (value === null || value === undefined) return "";
+  return String(value).replace(/[&<>"']/g, (c) => ESC_MAP[c]);
+}
 
 class FlightsAboveCard extends HTMLElement {
   setConfig(config) {
@@ -66,11 +75,11 @@ class FlightsAboveCard extends HTMLElement {
 
   _renderFlight(stateObj) {
     const a = stateObj.attributes;
-    const callsign = stateObj.state;
-    const origin = a.origin_iata || a.origin_icao || "???";
-    const dest = a.destination_iata || a.destination_icao || "???";
-    const originName = a.origin_name || "";
-    const destName = a.destination_name || "";
+    const callsign = esc(stateObj.state);
+    const origin = esc(a.origin_iata || a.origin_icao || "???");
+    const dest = esc(a.destination_iata || a.destination_icao || "???");
+    const originName = esc(a.origin_name || "");
+    const destName = esc(a.destination_name || "");
     const pct = this._clampPercent(a.progress_percent);
     const planePos = pct === null ? 50 : Math.max(4, Math.min(96, pct));
     const knownRoute = a.progress_percent !== null && a.progress_percent !== undefined;
@@ -99,7 +108,7 @@ class FlightsAboveCard extends HTMLElement {
     }
 
     const subtitle = this._config.show_details
-      ? [a.aircraft_type, a.registration].filter(Boolean).join(" · ")
+      ? esc([a.aircraft_type, a.registration].filter(Boolean).join(" · "))
       : "";
 
     return `
@@ -134,7 +143,7 @@ class FlightsAboveCard extends HTMLElement {
           <div class="h right">${left ? `${left} left` : ""}</div>
         </div>
         ${total ? `<div class="total">${total} total flight time</div>` : ""}
-        ${chips.length ? `<div class="chips">${chips.map((c) => `<span>${c}</span>`).join("")}</div>` : ""}
+        ${chips.length ? `<div class="chips">${chips.map((c) => `<span>${esc(c)}</span>`).join("")}</div>` : ""}
       </div>`;
   }
 
@@ -166,8 +175,8 @@ class FlightsAboveCard extends HTMLElement {
 
     const header = this._config.title
       ? `<div class="card-header">
-           <span>${this._config.title}</span>
-           <span class="count">${count}</span>
+           <span>${esc(this._config.title)}</span>
+           <span class="count">${esc(count)}</span>
          </div>`
       : "";
 

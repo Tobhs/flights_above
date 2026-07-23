@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -182,6 +183,53 @@ def _build_progress_bar(pct: float | None, width: int = 16) -> str | None:
     return f"●{left}✈{right}● {round(pct)}%"
 
 
+# Defensive limits for untrusted API data.
+MAX_AIRCRAFT_PER_UPDATE = 300  # ignore absurdly large responses
+MAX_HISTORY = 200  # cap remembered flights to bound memory
+MAX_ROUTE_CACHE = 500  # cap resolved-route cache
+MAX_TEXT_LEN = 60  # cap any free-text field from the API
+
+
+def _finite(value) -> float | None:
+    """Return value as a finite float, or None (rejects NaN/inf/garbage)."""
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return None
+    return num if math.isfinite(num) else None
+
+
+def _valid_lat(value) -> float | None:
+    num = _finite(value)
+    return num if num is not None and -90.0 <= num <= 90.0 else None
+
+
+def _valid_lon(value) -> float | None:
+    num = _finite(value)
+    return num if num is not None and -180.0 <= num <= 180.0 else None
+
+
+def _clean_text(value, max_len: int = MAX_TEXT_LEN) -> str | None:
+    """Coerce to a trimmed, printable, length-capped string, or None.
+
+    Angle brackets are dropped so the stored value can never carry HTML tags,
+    protecting any consumer of these attributes, not just our own card.
+    """
+    if value is None:
+        return None
+    text = "".join(
+        ch for ch in str(value) if ch.isprintable() and ch not in "<>"
+    ).strip()
+    return text[:max_len] if text else None
+
+
+def _safe_callsign(value) -> str:
+    """Alphanumeric-only, uppercased callsign/hex for safe use in a URL path."""
+    if not value:
+        return ""
+    return re.sub(r"[^A-Za-z0-9]", "", str(value)).upper()[:10]
+
+
 class FlightsAboveCoordinator(DataUpdateCoordinator):
     """Fetch aircraft overhead and enrich them with route + progress data."""
 
@@ -229,6 +277,10 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
         flights = sorted(
             self._history.values(), key=lambda f: f["last_seen"], reverse=True
         )
+        # Bound memory: never keep more than MAX_HISTORY flights around.
+        if len(flights) > MAX_HISTORY:
+            flights = flights[:MAX_HISTORY]
+            self._history = {f["hex"]: f for f in flights}
         return flights[: self.count]
 
     async def _fetch_aircraft(self) -> list[dict]:
@@ -251,15 +303,24 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
                 last_error = err
                 continue
 
+            if not isinstance(payload, dict):
+                last_error = UpdateFailed(f"{url} returned a non-object body")
+                continue
             aircraft = payload.get("ac") or payload.get("aircraft") or []
-            return aircraft
+            if not isinstance(aircraft, list):
+                last_error = UpdateFailed(f"{url} returned an unexpected shape")
+                continue
+            # Only keep dict records, and cap how many we will process.
+            return [ac for ac in aircraft if isinstance(ac, dict)][
+                :MAX_AIRCRAFT_PER_UPDATE
+            ]
 
         raise UpdateFailed(f"No ADS-B source responded: {last_error}")
 
     async def _build_flight(self, ac: dict, now: float) -> dict | None:
         """Turn one raw aircraft record into an enriched flight dict."""
-        lat = ac.get("lat")
-        lon = ac.get("lon")
+        lat = _valid_lat(ac.get("lat"))
+        lon = _valid_lon(ac.get("lon"))
         if lat is None or lon is None:
             return None
 
@@ -271,33 +332,45 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
         if distance_km > self.radius_km:
             return None
 
-        callsign = (ac.get("flight") or "").strip()
-        hex_id = (ac.get("hex") or callsign or f"{lat},{lon}").strip()
+        # Callsign/hex are used to build the adsbdb request URL, so force them
+        # to alphanumeric to prevent any path/query injection.
+        route_callsign = _safe_callsign(ac.get("flight"))
+        display_callsign = route_callsign or "Unknown"
+        hex_id = _safe_callsign(ac.get("hex")) or route_callsign or (
+            f"pos_{round(lat, 4)}_{round(lon, 4)}"
+        )
 
-        gs_knots = ac.get("gs")
-        try:
-            speed_kmh = float(gs_knots) * KM_PER_NM if gs_knots is not None else None
-        except (TypeError, ValueError):
-            speed_kmh = None
+        gs = _finite(ac.get("gs"))
+        speed_kmh = gs * KM_PER_NM if gs is not None and 0 <= gs <= 1500 else None
 
-        try:
-            altitude_ft = int(alt) if alt is not None else None
-        except (TypeError, ValueError):
-            altitude_ft = None
+        altitude_num = _finite(alt)
+        altitude_ft = (
+            int(altitude_num)
+            if altitude_num is not None and -2000 <= altitude_num <= 100000
+            else None
+        )
 
-        aircraft_type = ac.get("t")
+        heading_num = _finite(ac.get("track"))
+        heading = (
+            round(heading_num, 1)
+            if heading_num is not None and 0 <= heading_num <= 360
+            else None
+        )
+
+        registration = _clean_text(ac.get("r"), 12)
+        squawk = _clean_text(ac.get("squawk"), 6)
+        aircraft_type = _clean_text(ac.get("t"), 8)
         emissions_class = _emissions_class(aircraft_type)
         seats_typical, people_on_board = _people_on_board(
             aircraft_type, emissions_class
         )
 
         # Vertical movement / climb state from barometric rate (ft/min).
-        vertical_rate_fpm = None
+        vr = _finite(ac.get("baro_rate"))
+        vertical_rate_fpm = (
+            int(vr) if vr is not None and -20000 <= vr <= 20000 else None
+        )
         climb_status = None
-        try:
-            vertical_rate_fpm = int(ac.get("baro_rate"))
-        except (TypeError, ValueError):
-            vertical_rate_fpm = None
         if vertical_rate_fpm is not None:
             if vertical_rate_fpm > 200:
                 climb_status = "climbing"
@@ -308,17 +381,17 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
 
         flight: dict = {
             "hex": hex_id,
-            "callsign": callsign or "Unknown",
-            "registration": ac.get("r"),
+            "callsign": display_callsign,
+            "registration": registration,
             "aircraft_type": aircraft_type,
             "latitude": lat,
             "longitude": lon,
             "altitude_ft": altitude_ft,
             "ground_speed_kmh": round(speed_kmh, 1) if speed_kmh else None,
-            "heading": ac.get("track"),
+            "heading": heading,
             "vertical_rate_fpm": vertical_rate_fpm,
             "climb_status": climb_status,
-            "squawk": ac.get("squawk"),
+            "squawk": squawk,
             "emissions_class": emissions_class,
             "seats_typical": seats_typical,
             "people_on_board": people_on_board,
@@ -343,7 +416,7 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
             "route_line": None,
         }
 
-        route = await self._get_route(callsign)
+        route = await self._get_route(route_callsign)
         if not route and self.require_route:
             # We couldn't identify where this flight is going; skip it.
             return None
@@ -433,12 +506,20 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
                 return value
 
         route = await self._fetch_route(callsign)
+        # Bound the cache: drop the oldest entries if it grows too large.
+        if len(self._route_cache) >= MAX_ROUTE_CACHE:
+            oldest = sorted(self._route_cache.items(), key=lambda kv: kv[1][1])
+            for key, _ in oldest[: len(oldest) // 2]:
+                self._route_cache.pop(key, None)
         self._route_cache[callsign] = (route, now)
         return route
 
     async def _fetch_route(self, callsign: str) -> dict | None:
+        safe = _safe_callsign(callsign)
+        if not safe:
+            return None
         headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
-        url = f"{ADSBDB_CALLSIGN_URL}{callsign}"
+        url = f"{ADSBDB_CALLSIGN_URL}{safe}"
         try:
             async with asyncio.timeout(REQUEST_TIMEOUT):
                 resp = await self._session.get(url, headers=headers)
@@ -448,6 +529,8 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
         except (aiohttp.ClientError, asyncio.TimeoutError):
             return None
 
+        if not isinstance(payload, dict):
+            return None
         response = payload.get("response")
         if not isinstance(response, dict):
             return None  # e.g. {"response": "unknown callsign"}
@@ -455,17 +538,19 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
         if not isinstance(flightroute, dict):
             return None
 
-        origin = flightroute.get("origin") or {}
-        destination = flightroute.get("destination") or {}
+        origin = flightroute.get("origin")
+        destination = flightroute.get("destination")
+        origin = origin if isinstance(origin, dict) else {}
+        destination = destination if isinstance(destination, dict) else {}
         return {
-            "origin_name": origin.get("name"),
-            "origin_iata": origin.get("iata_code"),
-            "origin_icao": origin.get("icao_code"),
-            "origin_lat": origin.get("latitude"),
-            "origin_lon": origin.get("longitude"),
-            "destination_name": destination.get("name"),
-            "destination_iata": destination.get("iata_code"),
-            "destination_icao": destination.get("icao_code"),
-            "destination_lat": destination.get("latitude"),
-            "destination_lon": destination.get("longitude"),
+            "origin_name": _clean_text(origin.get("name")),
+            "origin_iata": _clean_text(origin.get("iata_code"), 4),
+            "origin_icao": _clean_text(origin.get("icao_code"), 4),
+            "origin_lat": _valid_lat(origin.get("latitude")),
+            "origin_lon": _valid_lon(origin.get("longitude")),
+            "destination_name": _clean_text(destination.get("name")),
+            "destination_iata": _clean_text(destination.get("iata_code"), 4),
+            "destination_icao": _clean_text(destination.get("icao_code"), 4),
+            "destination_lat": _valid_lat(destination.get("latitude")),
+            "destination_lon": _valid_lon(destination.get("longitude")),
         }
