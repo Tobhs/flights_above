@@ -5,9 +5,15 @@ over a location you choose. For each flight it gives you the callsign, the
 departure and arrival airports, and a **progress line** showing how far along the
 journey the plane is — hours already flown, hours remaining, and total.
 
-```
-LHR ●━━━━━━✈──────● JFK  ·  38%  ·  2.5h done · 4.1h left · 6.6h total
-```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/card-dark.svg">
+    <img alt="Flights Above card showing two flights with progress tracks" src="assets/card-light.svg" width="460">
+  </picture>
+</p>
+
+> The bundled Lovelace card, drawing each flight as an origin → ✈ → destination
+> track with hours, an estimated CO₂ footprint, and people on board.
 
 All data comes from **free, open community APIs — no account, no API key, nothing
 to pay**:

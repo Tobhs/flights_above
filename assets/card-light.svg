@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="460" height="456" viewBox="0 0 460 456" font-family="Roboto, Segoe UI, system-ui, sans-serif">
+<defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="6" flood-opacity="0.18"/></filter></defs>
+<rect x="2" y="2" width="456" height="452" rx="14" fill="#ffffff" stroke="#e6e8eb" stroke-width="1" filter="url(#sh)"/>
+<text x="16" y="42" font-size="21" font-weight="500" fill="#212121">Flights Above</text>
+<rect x="410" y="24" width="34" height="23" rx="11.5" fill="#03a9f4"/>
+<text x="427.0" y="40" font-size="12" font-weight="600" text-anchor="middle" fill="#ffffff">2</text>
+<text x="16" y="80" font-size="18" font-weight="600" fill="#212121" style="letter-spacing:.5px">BAW178</text>
+<text x="444" y="80" font-size="12" text-anchor="end" fill="#727272">B77W · G-STBH</text>
+<text x="16" y="104" font-size="16" font-weight="700" fill="#212121">LHR</text>
+<text x="444" y="104" font-size="16" font-weight="700" text-anchor="end" fill="#212121">JFK</text>
+<text x="16" y="119" font-size="11" fill="#727272">London Heathrow</text>
+<text x="444" y="119" font-size="11" text-anchor="end" fill="#727272">New York JFK</text>
+<line x1="16" y1="138" x2="444" y2="138" stroke="#e0e3e7" stroke-width="3" stroke-linecap="round"/>
+<line x1="16" y1="138" x2="178.6" y2="138" stroke="#03a9f4" stroke-width="3" stroke-linecap="round"/>
+<circle cx="16" cy="138" r="5.5" fill="#212121" stroke="#ffffff" stroke-width="2"/>
+<circle cx="444" cy="138" r="5.5" fill="#212121" stroke="#ffffff" stroke-width="2"/>
+<g transform="translate(168.6,128.0) rotate(45,10.0,10.0) scale(0.833)"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="#03a9f4"/></g>
+<text x="16" y="160" font-size="12" fill="#727272">2.5h flown</text>
+<text x="230.0" y="160" font-size="12" font-weight="600" text-anchor="middle" fill="#03a9f4">38%</text>
+<text x="444" y="160" font-size="12" text-anchor="end" fill="#727272">4.1h left</text>
+<text x="230.0" y="175" font-size="11" text-anchor="middle" fill="#727272">6.6h total flight time</text>
+<rect x="45.0" y="187" width="90" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="90.0" y="201.5" font-size="11.5" text-anchor="middle" fill="#5a6570">7.2 km away</text>
+<rect x="142.0" y="187" width="78" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="181.0" y="201.5" font-size="11.5" text-anchor="middle" fill="#5a6570">38,000 ft</text>
+<rect x="227.0" y="187" width="72" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="263.0" y="201.5" font-size="11.5" text-anchor="middle" fill="#5a6570">912 km/h</text>
+<rect x="306.0" y="187" width="109" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="360.5" y="201.5" font-size="11.5" text-anchor="middle" fill="#5a6570">≈ 299 on board</text>
+<rect x="133.0" y="215" width="109" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="187.5" y="229.5" font-size="11.5" text-anchor="middle" fill="#5a6570">132,418 kg CO₂</text>
+<rect x="249.0" y="215" width="78" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="288.0" y="229.5" font-size="11.5" text-anchor="middle" fill="#5a6570">ETA 18:42</text>
+<line x1="16" y1="249" x2="444" y2="249" stroke="#e6e8eb" stroke-width="1"/>
+<text x="16" y="279" font-size="18" font-weight="600" fill="#212121" style="letter-spacing:.5px">KLM605</text>
+<text x="444" y="279" font-size="12" text-anchor="end" fill="#727272">A339 · PH-BHA</text>
+<text x="16" y="303" font-size="16" font-weight="700" fill="#212121">AMS</text>
+<text x="444" y="303" font-size="16" font-weight="700" text-anchor="end" fill="#212121">LAX</text>
+<text x="16" y="318" font-size="11" fill="#727272">Amsterdam</text>
+<text x="444" y="318" font-size="11" text-anchor="end" fill="#727272">Los Angeles</text>
+<line x1="16" y1="337" x2="444" y2="337" stroke="#e0e3e7" stroke-width="3" stroke-linecap="round"/>
+<line x1="16" y1="337" x2="289.9" y2="337" stroke="#03a9f4" stroke-width="3" stroke-linecap="round"/>
+<circle cx="16" cy="337" r="5.5" fill="#212121" stroke="#ffffff" stroke-width="2"/>
+<circle cx="444" cy="337" r="5.5" fill="#212121" stroke="#ffffff" stroke-width="2"/>
+<g transform="translate(279.9,327.0) rotate(45,10.0,10.0) scale(0.833)"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="#03a9f4"/></g>
+<text x="16" y="359" font-size="12" fill="#727272">6.9h flown</text>
+<text x="230.0" y="359" font-size="12" font-weight="600" text-anchor="middle" fill="#03a9f4">64%</text>
+<text x="444" y="359" font-size="12" text-anchor="end" fill="#727272">3.9h left</text>
+<text x="230.0" y="374" font-size="11" text-anchor="middle" fill="#727272">10.8h total flight time</text>
+<rect x="41.5" y="386" width="97" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="90.0" y="400.5" font-size="11.5" text-anchor="middle" fill="#5a6570">11.4 km away</text>
+<rect x="145.5" y="386" width="78" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="184.5" y="400.5" font-size="11.5" text-anchor="middle" fill="#5a6570">36,000 ft</text>
+<rect x="230.5" y="386" width="72" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="266.5" y="400.5" font-size="11.5" text-anchor="middle" fill="#5a6570">889 km/h</text>
+<rect x="309.5" y="386" width="109" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="364.0" y="400.5" font-size="11.5" text-anchor="middle" fill="#5a6570">≈ 238 on board</text>
+<rect x="133.0" y="414" width="109" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="187.5" y="428.5" font-size="11.5" text-anchor="middle" fill="#5a6570">211,222 kg CO₂</text>
+<rect x="249.0" y="414" width="78" height="21" rx="10.5" fill="#eef1f5"/>
+<text x="288.0" y="428.5" font-size="11.5" text-anchor="middle" fill="#5a6570">ETA 22:07</text>
+</svg>
