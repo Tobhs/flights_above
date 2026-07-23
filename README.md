@@ -1,4 +1,4 @@
-# ![](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/logo.png) Flights Above
+# ![](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/brand.png) Flights Above
 
 A Home Assistant custom integration (HACS-ready) that shows the aircraft passing
 over a location you choose. For each flight it gives you the callsign, the
@@ -8,7 +8,7 @@ journey the plane is: hours already flown, hours remaining, and total.
 The bundled Lovelace card draws each flight as an origin → ✈ → destination track
 with hours, an estimated CO₂ footprint, and people on board (light and dark):
 
-![Flights Above card, light theme](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/card-light.png) ![Flights Above card, dark theme](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/card-dark.png)
+![Flights Above card, light theme](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/preview-light.png) ![Flights Above card, dark theme](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/preview-dark.png)
 
 All data comes from **free, open community APIs: no account, no API key, nothing
 to pay**:
