@@ -11,3 +11,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# stray scratch files
+/integ*.txt
