@@ -8,8 +8,6 @@ journey the plane is: hours already flown, hours remaining, and total.
 The bundled Lovelace card draws each flight as an origin → ✈ → destination track
 with hours, an estimated CO₂ footprint, and people on board:
 
-![Flights Above card, light theme](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/card-light.png)
-
 ![Flights Above card, dark theme](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/card-dark.png)
 
 All data comes from **free, open community APIs: no account, no API key, nothing
