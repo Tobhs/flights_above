@@ -1,4 +1,6 @@
-# ✈ Flights Above
+![Flights Above](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/logo.png)
+
+# Flights Above
 
 A Home Assistant custom integration (HACS-ready) that shows the aircraft passing
 over a location you choose. For each flight it gives you the callsign, the
