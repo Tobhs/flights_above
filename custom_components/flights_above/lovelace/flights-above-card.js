@@ -44,6 +44,24 @@ class FlightsAboveCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    if (!this._config) return;
+
+    // Only re-render when our own data (or the selection) actually changed, and
+    // trigger one radar sweep per data refresh rather than on every tick.
+    const parts = [];
+    const countObj = hass.states[this._countEntityId()];
+    if (countObj) parts.push(countObj.last_updated);
+    for (const id of this._flightEntityIds()) {
+      const s = hass.states[id];
+      if (s) parts.push(s.last_updated);
+    }
+    const dataStamp = parts.join(",");
+    const stamp = `${dataStamp}|${this._selected || ""}`;
+    if (stamp === this._stamp) return;
+
+    this._sweep = Boolean(dataStamp) && dataStamp !== this._dataStamp;
+    this._dataStamp = dataStamp;
+    this._stamp = stamp;
     this._render();
   }
 
@@ -227,6 +245,14 @@ class FlightsAboveCard extends HTMLElement {
           <text x="196" y="103" text-anchor="end" class="dir">E</text>
           <text x="100" y="196" text-anchor="middle" class="dir">S</text>
           <text x="4" y="103" text-anchor="start" class="dir">W</text>
+          ${
+            this._sweep
+              ? `<g class="sweep">
+                   <path class="sweep-wedge" d="M100,100 L100,14 A86,86 0 0,1 143,25.5 Z"/>
+                   <line x1="100" y1="100" x2="100" y2="14"/>
+                 </g>`
+              : ""
+          }
           <circle cx="100" cy="100" r="3.5" class="home"/>
           ${marks}
         </svg>
@@ -323,6 +349,9 @@ class FlightsAboveCard extends HTMLElement {
     this.shadowRoot.querySelectorAll(".hit").forEach((el) => {
       el.addEventListener("click", () => this._select(el.getAttribute("data-cs")));
     });
+
+    // The sweep plays once per data refresh, not on selection re-renders.
+    this._sweep = false;
   }
 
   _styles() {
@@ -431,8 +460,23 @@ class FlightsAboveCard extends HTMLElement {
       .radar .blip-label { fill: var(--secondary-text-color); font-size: 9px; }
       .radar .blip-label.sel { fill: var(--primary-text-color); font-weight: 700; }
       .radar .hit { fill: transparent; cursor: pointer; }
+      .radar .sweep {
+        transform-box: view-box; transform-origin: 100px 100px;
+        animation: fa-sweep 1.8s linear 1 forwards; pointer-events: none;
+      }
+      .radar .sweep line {
+        stroke: var(--primary-color); stroke-width: 2; stroke-linecap: round;
+      }
+      .radar .sweep-wedge { fill: var(--primary-color); opacity: 0.18; }
+      @keyframes fa-sweep {
+        from { transform: rotate(0deg); opacity: 1; }
+        to { transform: rotate(360deg); opacity: 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .radar .sweep { animation: none; opacity: 0; }
+      }
       .radar-caption {
-        margin-top: 4px; font-size: 0.75rem; color: var(--secondary-text-color);
+        margin-top: 12px; font-size: 0.75rem; color: var(--secondary-text-color);
       }
       .radar-note {
         margin-top: 2px; font-size: 0.7rem; color: var(--secondary-text-color);

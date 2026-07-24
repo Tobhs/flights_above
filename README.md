@@ -13,7 +13,7 @@ with hours, an estimated CO₂ footprint, and people on board (light and dark):
 Turn on `show_radar` and it also draws a radar of **every** aircraft around you,
 plotted by real bearing and distance:
 
-![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-light.png) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-dark.png)
+![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-light.png?v=2) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-dark.png?v=2)
 
 All data comes from **free, open community APIs: no account, no API key, nothing
 to pay**:
@@ -166,7 +166,7 @@ Set `show_radar: true` to draw a radar around your location. Your position is th
 centre, north is up, and every aircraft currently inside your radius is plotted by
 its real bearing and distance (not just the ones listed below it):
 
-![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-light.png) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-dark.png)
+![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-light.png?v=2) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-dark.png?v=2)
 
 ```yaml
 type: custom:flights-above-card
@@ -180,7 +180,9 @@ show_radar: true
 The rings mark a third, two thirds, and the full radius you configured. Callsigns
 are labelled when six or fewer aircraft are in range, so it stays readable when the
 sky is busy, and each blip has a short line showing **which way that aircraft is
-heading**.
+heading**. Each time new data arrives the radar plays a **sweep**, like a real one,
+so you can see at a glance that it just refreshed (it respects your reduced-motion
+setting).
 
 **Tap a plane** on the radar and the section underneath switches to that aircraft's
 details instead of the usual list. It goes back to the normal list on its own after
