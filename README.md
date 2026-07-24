@@ -10,6 +10,11 @@ with hours, an estimated CO₂ footprint, and people on board (light and dark):
 
 ![Flights Above card, light theme](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/preview-light.png) ![Flights Above card, dark theme](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/preview-dark.png)
 
+Turn on `show_radar` and it also draws a radar of **every** aircraft around you,
+plotted by real bearing and distance:
+
+![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-light.png) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-dark.png)
+
 All data comes from **free, open community APIs: no account, no API key, nothing
 to pay**:
 
