@@ -109,6 +109,8 @@ class FlightsOverheadSensor(_BaseFlightsEntity):
             "latitude": self.coordinator.latitude,
             "longitude": self.coordinator.longitude,
             "tracked_flights": len(flights),
+            # Bearing + distance for every aircraft in range (radar view).
+            "radar": self.coordinator.radar,
             "flights": [
                 {
                     "callsign": f["callsign"],

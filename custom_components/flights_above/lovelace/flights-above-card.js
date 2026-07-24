@@ -31,6 +31,7 @@ class FlightsAboveCard extends HTMLElement {
       sort: config.sort === "distance" ? "distance" : "recent",
       show_details: config.show_details !== false,
       show_empty: config.show_empty !== false,
+      show_radar: config.show_radar === true,
     };
     if (!this._built) {
       this.attachShadow({ mode: "open" });
@@ -154,6 +155,48 @@ class FlightsAboveCard extends HTMLElement {
       </div>`;
   }
 
+  _renderRadar(countObj) {
+    const a = (countObj && countObj.attributes) || {};
+    const radius = Number(a.radius_km) || 0;
+    const blips = Array.isArray(a.radar) ? a.radar : [];
+    if (!radius) return "";
+
+    const R = 86, cx = 100, cy = 100;
+    const showLabels = blips.length > 0 && blips.length <= 6;
+    const marks = blips
+      .map((b) => {
+        const dist = Math.max(0, Math.min(Number(b.distance_km) || 0, radius));
+        const d = (dist / radius) * R;
+        const th = ((Number(b.bearing) || 0) * Math.PI) / 180;
+        const x = cx + d * Math.sin(th);
+        const y = cy - d * Math.cos(th);
+        const label = showLabels
+          ? `<text x="${(x + 7).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" class="blip-label">${esc(b.callsign)}</text>`
+          : "";
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" class="blip"/>${label}`;
+      })
+      .join("");
+
+    const total = countObj ? countObj.state : blips.length;
+    return `
+      <div class="radar">
+        <svg viewBox="0 0 200 200" role="img" aria-label="Aircraft around your location">
+          <circle cx="100" cy="100" r="86" class="ring"/>
+          <circle cx="100" cy="100" r="57" class="ring"/>
+          <circle cx="100" cy="100" r="28" class="ring"/>
+          <line x1="100" y1="14" x2="100" y2="186" class="cross"/>
+          <line x1="14" y1="100" x2="186" y2="100" class="cross"/>
+          <text x="100" y="11" text-anchor="middle" class="dir">N</text>
+          <text x="196" y="103" text-anchor="end" class="dir">E</text>
+          <text x="100" y="196" text-anchor="middle" class="dir">S</text>
+          <text x="4" y="103" text-anchor="start" class="dir">W</text>
+          <circle cx="100" cy="100" r="3.5" class="home"/>
+          ${marks}
+        </svg>
+        <div class="radar-caption">${esc(total)} in range · ${esc(radius)} km radius</div>
+      </div>`;
+  }
+
   _render() {
     if (!this._hass || !this._config) return;
 
@@ -197,10 +240,13 @@ class FlightsAboveCard extends HTMLElement {
          </div>`
       : "";
 
+    const radar = this._config.show_radar ? this._renderRadar(countObj) : "";
+
     this.shadowRoot.innerHTML = `
       <style>${this._styles()}</style>
       <ha-card>
         ${header}
+        ${radar}
         <div class="content">${body}</div>
       </ha-card>`;
   }
@@ -292,6 +338,20 @@ class FlightsAboveCard extends HTMLElement {
       }
       .empty {
         padding: 24px 8px; text-align: center; color: var(--secondary-text-color);
+      }
+      .radar {
+        padding: 6px 16px 2px; display: flex; flex-direction: column; align-items: center;
+      }
+      .radar svg { width: 100%; max-width: 250px; height: auto; }
+      .radar .ring, .radar .cross {
+        fill: none; stroke: var(--divider-color); stroke-width: 1;
+      }
+      .radar .dir { fill: var(--secondary-text-color); font-size: 11px; }
+      .radar .home { fill: var(--primary-text-color); }
+      .radar .blip { fill: var(--primary-color); }
+      .radar .blip-label { fill: var(--secondary-text-color); font-size: 9px; }
+      .radar-caption {
+        margin-top: 4px; font-size: 0.75rem; color: var(--secondary-text-color);
       }
     `;
   }

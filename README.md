@@ -152,6 +152,28 @@ entity_prefix: sensor.flights_above
 | `sort` | `recent` | Order flights by `recent` (most recently seen) or `distance` (nearest first). |
 | `show_details` | `true` | Show aircraft type / registration and the info chips. |
 | `show_empty` | `true` | Show a "No flights in range" message when the sky is empty. |
+| `show_radar` | `false` | Show a radar of **every** aircraft in range around your location. |
+
+### Radar view
+
+Set `show_radar: true` to draw a radar around your location. Your position is the
+centre, north is up, and every aircraft currently inside your radius is plotted by
+its real bearing and distance (not just the ones listed below it):
+
+![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-light.png) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-dark.png)
+
+```yaml
+type: custom:flights-above-card
+title: Flights Above
+entity_prefix: sensor.flights_above
+max: 1
+show_details: true
+show_radar: true
+```
+
+The rings mark a third, two thirds, and the full radius you configured. Callsigns
+are labelled when six or fewer aircraft are in range, so it stays readable when the
+sky is busy.
 
 Show a single flight (e.g. the nearest one):
 

@@ -23,6 +23,9 @@ MIN_SCAN_INTERVAL = 15
 MAX_SCAN_INTERVAL = 3600
 
 # How long a flight stays in the "recently passed through" history (seconds).
+# Maximum aircraft plotted on the radar view (bounds the attribute size).
+MAX_RADAR_BLIPS = 60
+
 HISTORY_TTL = 1800  # 30 minutes
 # How long a resolved callsign -> route lookup is cached (seconds).
 ROUTE_CACHE_TTL = 21600  # 6 hours

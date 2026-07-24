@@ -30,6 +30,7 @@ from .const import (
     DOMAIN,
     HISTORY_TTL,
     KM_PER_NM,
+    MAX_RADAR_BLIPS,
     MAX_RADIUS_NM,
     REQUEST_TIMEOUT,
     ROUTE_CACHE_TTL,
@@ -171,6 +172,15 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return radius * 2 * math.asin(math.sqrt(a))
 
 
+def bearing_deg(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Initial compass bearing from point 1 to point 2, in degrees (0 = north)."""
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    d_lon = math.radians(lon2 - lon1)
+    y = math.sin(d_lon) * math.cos(phi2)
+    x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(d_lon)
+    return (math.degrees(math.atan2(y, x)) + 360) % 360
+
+
 def _build_progress_bar(pct: float | None, width: int = 16) -> str | None:
     """Return an origin ●━━✈──● destination style bar for the given percent."""
     if pct is None:
@@ -252,6 +262,8 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
         self._history: dict[str, dict] = {}
         # True number of airborne aircraft currently inside the radius.
         self.current_count: int = 0
+        # Lightweight positions (bearing + distance) for the radar view.
+        self.radar: list[dict] = []
 
         super().__init__(
             hass,
@@ -268,14 +280,40 @@ class FlightsAboveCoordinator(DataUpdateCoordinator):
         # of whether its route can be resolved. This is the true "flights
         # overhead" number. Cheap position-only check, no route lookups.
         in_range = 0
+        radar: list[dict] = []
         for ac in aircraft:
             lat = _valid_lat(ac.get("lat"))
             lon = _valid_lon(ac.get("lon"))
             if lat is None or lon is None or ac.get("alt_baro") == "ground":
                 continue
-            if haversine_km(self.latitude, self.longitude, lat, lon) <= self.radius_km:
-                in_range += 1
+            dist = haversine_km(self.latitude, self.longitude, lat, lon)
+            if dist > self.radius_km:
+                continue
+            in_range += 1
+            if len(radar) < MAX_RADAR_BLIPS:
+                heading = _finite(ac.get("track"))
+                alt = _finite(ac.get("alt_baro"))
+                radar.append(
+                    {
+                        "callsign": _safe_callsign(ac.get("flight")) or "?",
+                        "distance_km": round(dist, 1),
+                        "bearing": round(
+                            bearing_deg(self.latitude, self.longitude, lat, lon)
+                        ),
+                        "heading": (
+                            round(heading)
+                            if heading is not None and 0 <= heading <= 360
+                            else None
+                        ),
+                        "altitude_ft": (
+                            int(alt)
+                            if alt is not None and -2000 <= alt <= 100000
+                            else None
+                        ),
+                    }
+                )
         self.current_count = in_range
+        self.radar = radar
 
         for ac in aircraft:
             flight = await self._build_flight(ac, now)
