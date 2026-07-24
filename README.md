@@ -13,7 +13,7 @@ with hours, an estimated CO₂ footprint, and people on board (light and dark):
 Turn on `show_radar` and it also draws a radar of **every** aircraft around you,
 plotted by real bearing and distance:
 
-![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-light.png) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-dark.png)
+![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-light.png) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-dark.png)
 
 All data comes from **free, open community APIs: no account, no API key, nothing
 to pay**:
@@ -158,6 +158,7 @@ entity_prefix: sensor.flights_above
 | `show_details` | `true` | Show aircraft type / registration and the info chips. |
 | `show_empty` | `true` | Show a "No flights in range" message when the sky is empty. |
 | `show_radar` | `false` | Show a radar of **every** aircraft in range around your location. |
+| `select_seconds` | `30` | How long a plane tapped on the radar stays pinned before the list returns. |
 
 ### Radar view
 
@@ -165,7 +166,7 @@ Set `show_radar: true` to draw a radar around your location. Your position is th
 centre, north is up, and every aircraft currently inside your radius is plotted by
 its real bearing and distance (not just the ones listed below it):
 
-![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-light.png) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-dark.png)
+![Radar view, light](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-light.png) ![Radar view, dark](https://raw.githubusercontent.com/Tobhs/flights_above/main/assets/radar-view-dark.png)
 
 ```yaml
 type: custom:flights-above-card
@@ -178,7 +179,14 @@ show_radar: true
 
 The rings mark a third, two thirds, and the full radius you configured. Callsigns
 are labelled when six or fewer aircraft are in range, so it stays readable when the
-sky is busy.
+sky is busy, and each blip has a short line showing **which way that aircraft is
+heading**.
+
+**Tap a plane** on the radar and the section underneath switches to that aircraft's
+details instead of the usual list. It goes back to the normal list on its own after
+30 seconds (change it with `select_seconds`), or tap the same plane again to switch
+back straight away. If you tap an aircraft that is not one of your tracked flight
+slots, you still get its distance, altitude, bearing and heading.
 
 Show a single flight (e.g. the nearest one):
 

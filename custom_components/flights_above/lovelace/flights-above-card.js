@@ -32,7 +32,10 @@ class FlightsAboveCard extends HTMLElement {
       show_details: config.show_details !== false,
       show_empty: config.show_empty !== false,
       show_radar: config.show_radar === true,
+      select_seconds:
+        Number(config.select_seconds) > 0 ? Number(config.select_seconds) : 30,
     };
+    this._selected = this._selected || null;
     if (!this._built) {
       this.attachShadow({ mode: "open" });
       this._built = true;
@@ -46,6 +49,26 @@ class FlightsAboveCard extends HTMLElement {
 
   getCardSize() {
     return 1 + (this._config ? this._config.max : 3);
+  }
+
+  disconnectedCallback() {
+    if (this._selectTimer) clearTimeout(this._selectTimer);
+    this._selectTimer = null;
+  }
+
+  // Pin the tapped aircraft, then fall back to the default list after a while.
+  _select(callsign) {
+    if (!callsign || callsign === "?") return;
+    this._selected = callsign === this._selected ? null : callsign;
+    if (this._selectTimer) clearTimeout(this._selectTimer);
+    if (this._selected) {
+      this._selectTimer = setTimeout(() => {
+        this._selected = null;
+        this._selectTimer = null;
+        this._render();
+      }, this._config.select_seconds * 1000);
+    }
+    this._render();
   }
 
   static getStubConfig() {
@@ -170,14 +193,28 @@ class FlightsAboveCard extends HTMLElement {
         const th = ((Number(b.bearing) || 0) * Math.PI) / 180;
         const x = cx + d * Math.sin(th);
         const y = cy - d * Math.cos(th);
+        const selected = this._selected && b.callsign === this._selected;
+
+        // Short vector pointing where the aircraft is heading.
+        let track = "";
+        const hd = Number(b.heading);
+        if (b.heading !== null && b.heading !== undefined && !isNaN(hd)) {
+          const hr = (hd * Math.PI) / 180;
+          const x2 = x + 12 * Math.sin(hr);
+          const y2 = y - 12 * Math.cos(hr);
+          track = `<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" class="heading ${selected ? "sel" : ""}"/>`;
+        }
         const label = showLabels
-          ? `<text x="${(x + 7).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" class="blip-label">${esc(b.callsign)}</text>`
+          ? `<text x="${(x + 8).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" class="blip-label ${selected ? "sel" : ""}">${esc(b.callsign)}</text>`
           : "";
-        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" class="blip"/>${label}`;
+        return `${track}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${selected ? 6 : 4}" class="blip ${selected ? "sel" : ""}"/>${label}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="13" class="hit" data-cs="${esc(b.callsign)}"/>`;
       })
       .join("");
 
     const total = countObj ? countObj.state : blips.length;
+    const note = this._selected
+      ? `<div class="radar-note">Showing ${esc(this._selected)} · back to the list shortly</div>`
+      : `<div class="radar-note">Tap a plane to see its details</div>`;
     return `
       <div class="radar">
         <svg viewBox="0 0 200 200" role="img" aria-label="Aircraft around your location">
@@ -194,6 +231,23 @@ class FlightsAboveCard extends HTMLElement {
           ${marks}
         </svg>
         <div class="radar-caption">${esc(total)} in range · ${esc(radius)} km radius</div>
+        ${note}
+      </div>`;
+  }
+
+  // Fallback detail for a tapped aircraft that is not one of the tracked slots.
+  _renderBlipDetail(b) {
+    const chips = [];
+    if (b.distance_km !== null && b.distance_km !== undefined)
+      chips.push(`${b.distance_km} km away`);
+    if (b.altitude_ft) chips.push(`${Number(b.altitude_ft).toLocaleString()} ft`);
+    if (b.bearing !== null && b.bearing !== undefined) chips.push(`Bearing ${b.bearing}°`);
+    if (b.heading !== null && b.heading !== undefined) chips.push(`Heading ${b.heading}°`);
+    return `
+      <div class="flight">
+        <div class="row head"><div class="callsign">${esc(b.callsign)}</div></div>
+        <div class="summary">No route details for this aircraft yet, it is not one of the tracked flights.</div>
+        ${chips.length ? `<div class="chips">${chips.map((c) => `<span>${esc(c)}</span>`).join("")}</div>` : ""}
       </div>`;
   }
 
@@ -201,7 +255,7 @@ class FlightsAboveCard extends HTMLElement {
     if (!this._hass || !this._config) return;
 
     const entities = this._flightEntityIds();
-    let flights = entities
+    const available = entities
       .map((id) => this._hass.states[id])
       .filter(
         (s) =>
@@ -212,6 +266,7 @@ class FlightsAboveCard extends HTMLElement {
       );
 
     // Optionally show the closest flights first, then trim to `max`.
+    let flights = [...available];
     if (this._config.sort === "distance") {
       const d = (s) => {
         const v = s.attributes.distance_km;
@@ -223,14 +278,28 @@ class FlightsAboveCard extends HTMLElement {
 
     const countObj = this._hass.states[this._countEntityId()];
     const count = countObj ? countObj.state : flights.length;
+    const radarList =
+      countObj && Array.isArray(countObj.attributes.radar)
+        ? countObj.attributes.radar
+        : [];
 
-    let body;
-    if (flights.length === 0) {
-      body = this._config.show_empty
-        ? `<div class="empty">No flights currently in range.</div>`
-        : "";
-    } else {
-      body = flights.map((s) => this._renderFlight(s)).join("");
+    // A tapped aircraft takes over the detail area until the timer runs out.
+    let body = "";
+    if (this._selected) {
+      const match = available.find((s) => s.state === this._selected);
+      if (match) {
+        body = this._renderFlight(match);
+      } else {
+        const blip = radarList.find((b) => b.callsign === this._selected);
+        body = blip ? this._renderBlipDetail(blip) : "";
+      }
+    }
+    if (!body) {
+      body = flights.length
+        ? flights.map((s) => this._renderFlight(s)).join("")
+        : this._config.show_empty
+          ? `<div class="empty">No flights currently in range.</div>`
+          : "";
     }
 
     const header = this._config.title
@@ -249,6 +318,11 @@ class FlightsAboveCard extends HTMLElement {
         ${radar}
         <div class="content">${body}</div>
       </ha-card>`;
+
+    // Tap targets on the radar select that aircraft.
+    this.shadowRoot.querySelectorAll(".hit").forEach((el) => {
+      el.addEventListener("click", () => this._select(el.getAttribute("data-cs")));
+    });
   }
 
   _styles() {
@@ -349,9 +423,23 @@ class FlightsAboveCard extends HTMLElement {
       .radar .dir { fill: var(--secondary-text-color); font-size: 11px; }
       .radar .home { fill: var(--primary-text-color); }
       .radar .blip { fill: var(--primary-color); }
+      .radar .blip.sel { fill: var(--primary-text-color); }
+      .radar .heading {
+        stroke: var(--primary-color); stroke-width: 2; stroke-linecap: round;
+      }
+      .radar .heading.sel { stroke: var(--primary-text-color); }
       .radar .blip-label { fill: var(--secondary-text-color); font-size: 9px; }
+      .radar .blip-label.sel { fill: var(--primary-text-color); font-weight: 700; }
+      .radar .hit { fill: transparent; cursor: pointer; }
       .radar-caption {
         margin-top: 4px; font-size: 0.75rem; color: var(--secondary-text-color);
+      }
+      .radar-note {
+        margin-top: 2px; font-size: 0.7rem; color: var(--secondary-text-color);
+        opacity: 0.8;
+      }
+      .summary {
+        margin-top: 6px; font-size: 0.85rem; color: var(--secondary-text-color);
       }
     `;
   }
